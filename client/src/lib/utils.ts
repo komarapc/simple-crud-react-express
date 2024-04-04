@@ -8,3 +8,7 @@ export function cn(...inputs: ClassValue[]) {
 export const stringToBoolean = (value: string) => {
   return value === "true";
 };
+
+export const numberFormat = (value: number) => {
+  return new Intl.NumberFormat().format(value);
+};

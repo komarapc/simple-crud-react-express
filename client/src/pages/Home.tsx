@@ -57,6 +57,7 @@ const Home = () => {
   const [modal, setModal] = useState<ModalType>("none");
   const { isOpen, onOpenChange } = useDisclosure();
   const [loading, setLoading] = useState(true);
+  const [selectedBook, setSelectedBook] = useState<Book>({} as Book);
   const filteredBooks = useMemo(() => {
     const limit =
       Number(Array.from(perPage)[0]) ||
@@ -209,6 +210,11 @@ const Home = () => {
                           variant="flat"
                           isIconOnly
                           size="sm"
+                          onClick={() => {
+                            setSelectedBook(book);
+                            setModal("update");
+                            onOpenChange();
+                          }}
                         >
                           <Edit2 />
                         </Button>
@@ -239,6 +245,7 @@ const Home = () => {
             fetchDataBook();
             onOpenChange();
           }}
+          data={selectedBook}
         />
       ) : null}
     </>
@@ -272,6 +279,26 @@ const ModalCreateUpdate = (props: ModalProps) => {
   const { title, isOpen, data, type, onOpenChange, onSubmit } = props;
   const [book, setBook] = useState<Book>({} as Book);
 
+  const toastSuccess = (message: string) => {
+    toast.success(message, {
+      position: "top-center",
+      style: {
+        backgroundColor: color.emerald[500],
+        color: color.emerald[50],
+        border: 0,
+      },
+    });
+  };
+  const toastError = (message: string) => {
+    toast.error(message, {
+      position: "top-center",
+      style: {
+        backgroundClip: color.red[500],
+        color: color.red[50],
+        border: 0,
+      },
+    });
+  };
   const handleCreate = async () => {
     const response = await fetch(`${api}/books`, {
       method: "POST",
@@ -282,24 +309,10 @@ const ModalCreateUpdate = (props: ModalProps) => {
     });
     const data = await response.json();
     if (!data) {
-      toast.error("Failed to create book", {
-        position: "top-center",
-        style: {
-          backgroundClip: color.red[500],
-          color: color.red[50],
-          border: 0,
-        },
-      });
+      toastError("Failed to create book");
       return;
     }
-    toast.success("Book created successfully", {
-      position: "top-center",
-      style: {
-        backgroundColor: color.emerald[500],
-        color: color.emerald[50],
-        border: 0,
-      },
-    });
+    toastSuccess("Book created successfully");
     onSubmit && onSubmit();
     setBook({} as Book);
   };
@@ -313,7 +326,11 @@ const ModalCreateUpdate = (props: ModalProps) => {
       body: JSON.stringify(book),
     });
     const data = await response.json();
-    console.log(data);
+    if (!data) {
+      toastError("Failed to update book");
+      return;
+    }
+    toastSuccess("Book updated successfully");
     onSubmit && onSubmit();
   };
 
@@ -353,7 +370,7 @@ const ModalCreateUpdate = (props: ModalProps) => {
             <Input
               label="Total Sales"
               type="number"
-              value={data?.totalSales.toString()}
+              value={book?.totalSales.toString()}
               onChange={(e) =>
                 handleChange("totalSales", Number(e.target.value))
               }
@@ -361,7 +378,7 @@ const ModalCreateUpdate = (props: ModalProps) => {
             <Input
               label="Price"
               type="number"
-              value={data?.price.amount.toString()}
+              value={book?.price.amount.toString()}
               onChange={(e) =>
                 handleChange("price", {
                   ...book.price,

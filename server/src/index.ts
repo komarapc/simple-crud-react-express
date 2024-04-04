@@ -4,7 +4,14 @@ import routeBooks from "./books";
 const app = express();
 dotenv.config();
 const port = process.env.PORT || 3000;
-console.log("port", port);
+
+// enable cors
+app.use((req, res, next) => {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  next();
+});
 
 // create a async simple route
 app.get("/", async (req, res) => {

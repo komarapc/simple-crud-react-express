@@ -122,15 +122,17 @@ const Home = () => {
                 </div>
               }
               bottomContent={
-                <div className="flex items-center justify-center">
-                  <Pagination
-                    total={filteredBooks.totalPage}
-                    onChange={setPage}
-                    radius="full"
-                    aria-label="pagination"
-                    aria-labelledby="pagination"
-                  />
-                </div>
+                filteredBooks.totalPage > 1 ? (
+                  <div className="flex items-center justify-center">
+                    <Pagination
+                      total={filteredBooks.totalPage}
+                      onChange={setPage}
+                      radius="full"
+                      aria-label="pagination"
+                      aria-labelledby="pagination"
+                    />
+                  </div>
+                ) : null
               }
             >
               <TableHeader>

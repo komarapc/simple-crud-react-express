@@ -26,6 +26,8 @@ import {
 } from "@nextui-org/react";
 import { useEffect, useMemo, useState } from "react";
 import { Edit2, Plus, Trash2 } from "lucide-react";
+import { toast, Toaster } from "sonner";
+import * as color from "tailwindcss/colors";
 type Book = {
   id: string;
   title: string;
@@ -279,7 +281,27 @@ const ModalCreateUpdate = (props: ModalProps) => {
       body: JSON.stringify(book),
     });
     const data = await response.json();
+    if (!data) {
+      toast.error("Failed to create book", {
+        position: "top-center",
+        style: {
+          backgroundClip: color.red[500],
+          color: color.red[50],
+          border: 0,
+        },
+      });
+      return;
+    }
+    toast.success("Book created successfully", {
+      position: "top-center",
+      style: {
+        backgroundColor: color.emerald[500],
+        color: color.emerald[50],
+        border: 0,
+      },
+    });
     onSubmit && onSubmit();
+    setBook({} as Book);
   };
 
   const handleUpdate = async () => {
@@ -363,6 +385,7 @@ const ModalCreateUpdate = (props: ModalProps) => {
           </ModalFooter>
         </ModalContent>
       </Modal>
+      <Toaster />
     </>
   );
 };

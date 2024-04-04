@@ -95,10 +95,6 @@ const Home = () => {
     setPage(1);
   }, [searchTitle]);
 
-  useEffect(() => {
-    console.log({ books });
-  }, [books]);
-
   return (
     <>
       <div className="container mx-auto py-10 font-inter">
@@ -223,6 +219,11 @@ const Home = () => {
                           variant="flat"
                           isIconOnly
                           size="sm"
+                          onClick={() => {
+                            setSelectedBook(book);
+                            setModal("delete");
+                            onOpenChange();
+                          }}
                         >
                           <Trash2 />
                         </Button>
@@ -246,6 +247,19 @@ const Home = () => {
             onOpenChange();
           }}
           data={selectedBook}
+        />
+      ) : null}
+      {modal === "delete" ? (
+        <ModalDelete
+          type={modal}
+          isOpen={isOpen}
+          onOpenChange={onOpenChange}
+          title="Delete"
+          data={selectedBook}
+          onSubmit={() => {
+            fetchDataBook();
+            onOpenChange();
+          }}
         />
       ) : null}
     </>
@@ -274,31 +288,30 @@ type ModalProps = {
   onSubmit?: () => void;
   onCancel?: () => void;
 };
-
+const toastSuccess = (message: string) => {
+  toast.success(message, {
+    position: "top-center",
+    style: {
+      backgroundColor: color.emerald[500],
+      color: color.emerald[50],
+      border: 0,
+    },
+  });
+};
+const toastError = (message: string) => {
+  toast.error(message, {
+    position: "top-center",
+    style: {
+      backgroundClip: color.red[500],
+      color: color.red[50],
+      border: 0,
+    },
+  });
+};
 const ModalCreateUpdate = (props: ModalProps) => {
   const { title, isOpen, data, type, onOpenChange, onSubmit } = props;
   const [book, setBook] = useState<Book>({} as Book);
 
-  const toastSuccess = (message: string) => {
-    toast.success(message, {
-      position: "top-center",
-      style: {
-        backgroundColor: color.emerald[500],
-        color: color.emerald[50],
-        border: 0,
-      },
-    });
-  };
-  const toastError = (message: string) => {
-    toast.error(message, {
-      position: "top-center",
-      style: {
-        backgroundClip: color.red[500],
-        color: color.red[50],
-        border: 0,
-      },
-    });
-  };
   const handleCreate = async () => {
     const response = await fetch(`${api}/books`, {
       method: "POST",
@@ -342,13 +355,10 @@ const ModalCreateUpdate = (props: ModalProps) => {
     if (data) setBook(data);
   }, [data]);
 
-  useEffect(() => {
-    console.log({ book });
-  }, [book]);
   return (
     <>
       <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
-        <ModalContent>
+        <ModalContent aria-label="modal" aria-labelledby="modal">
           <ModalHeader>{title}</ModalHeader>
           <ModalBody className="flex flex-col gap-4">
             <Input
@@ -370,7 +380,7 @@ const ModalCreateUpdate = (props: ModalProps) => {
             <Input
               label="Total Sales"
               type="number"
-              value={book?.totalSales.toString()}
+              value={book.totalSales ? book.totalSales.toString() : "0"}
               onChange={(e) =>
                 handleChange("totalSales", Number(e.target.value))
               }
@@ -378,7 +388,7 @@ const ModalCreateUpdate = (props: ModalProps) => {
             <Input
               label="Price"
               type="number"
-              value={book?.price.amount.toString()}
+              value={book?.price?.amount ? book.price.amount.toString() : "0"}
               onChange={(e) =>
                 handleChange("price", {
                   ...book.price,
@@ -403,6 +413,41 @@ const ModalCreateUpdate = (props: ModalProps) => {
         </ModalContent>
       </Modal>
       <Toaster />
+    </>
+  );
+};
+
+const ModalDelete = (props: ModalProps) => {
+  const { isOpen, data, title, onOpenChange, onSubmit } = props;
+
+  const handleDelete = async () => {
+    const response = await fetch(`${api}/books/${data?.id}`, {
+      method: "DELETE",
+    });
+    const res = await response.json();
+    if (!res) {
+      toastError("Failed to delete book");
+      return;
+    }
+    toastSuccess("Book deleted successfully");
+    onSubmit && onSubmit();
+  };
+  return (
+    <>
+      <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
+        <ModalContent aria-label="modal" aria-labelledby="modal">
+          <ModalHeader>{title}</ModalHeader>
+          <ModalBody>
+            <p>Are you sure want to delete this book?</p>
+          </ModalBody>
+          <ModalFooter>
+            <Button color="danger" onClick={handleDelete}>
+              Yes
+            </Button>
+            <Button onClick={onOpenChange}>No</Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </>
   );
 };

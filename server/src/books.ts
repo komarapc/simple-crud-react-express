@@ -42,10 +42,18 @@ router.get("/:id", async (req, res) => {
 });
 
 router.post("/", async (req, res) => {
-  const book: Book = req.body;
-  book.id = crypto.randomUUID();
-  data.push(book);
-  res.json(book);
+  try {
+    const book: Book = req.body;
+    book.id = crypto.randomUUID();
+    book.price.currency = "USD";
+    book.publishedDate = faker.date.past();
+
+    data.push(book);
+    res.json(book);
+  } catch (error) {
+    console.log({ error });
+    res.status(400).json({ message: "Invalid request" });
+  }
 });
 
 router.put("/:id", async (req, res) => {

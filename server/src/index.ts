@@ -12,7 +12,7 @@ app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
   next();
 });
-
+app.use(express.json());
 // create a async simple route
 app.get("/", async (req, res) => {
   res.send("Hello World!");

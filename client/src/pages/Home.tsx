@@ -92,6 +92,10 @@ const Home = () => {
     setPage(1);
   }, [searchTitle]);
 
+  useEffect(() => {
+    console.log({ books });
+  }, [books]);
+
   return (
     <>
       <div className="container mx-auto py-10 font-inter">
@@ -184,7 +188,7 @@ const Home = () => {
                     <TableCell className="capitalize">{book.title}</TableCell>
                     <TableCell>{book.author}</TableCell>
                     <TableCell>
-                      {new Date(book.publishedDate as string).toDateString()}
+                      {new Date(book.publishedDate).toDateString()}
                     </TableCell>
                     <TableCell>{book.totalSales}</TableCell>
                     <TableCell>
@@ -229,7 +233,10 @@ const Home = () => {
           isOpen={isOpen}
           onOpenChange={onOpenChange}
           title={modal === "create" ? "Create new" : "Update"}
-          onSubmit={fetchDataBook}
+          onSubmit={() => {
+            fetchDataBook();
+            onOpenChange();
+          }}
         />
       ) : null}
     </>
@@ -272,7 +279,6 @@ const ModalCreateUpdate = (props: ModalProps) => {
       body: JSON.stringify(book),
     });
     const data = await response.json();
-    console.log(data);
     onSubmit && onSubmit();
   };
 
@@ -289,15 +295,17 @@ const ModalCreateUpdate = (props: ModalProps) => {
     onSubmit && onSubmit();
   };
 
+  const handleChange = (key: keyof Book, value: any) => {
+    setBook({ ...book, [key]: value });
+  };
+
   useEffect(() => {
-    if (data)
-      setBook({
-        ...data,
-        id: crypto.randomUUID(),
-        totalSales: Math.random() * 1000,
-        price: { amount: Math.random() * 100, currency: "USD" },
-      });
+    if (data) setBook(data);
   }, [data]);
+
+  useEffect(() => {
+    console.log({ book });
+  }, [book]);
   return (
     <>
       <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
@@ -307,28 +315,37 @@ const ModalCreateUpdate = (props: ModalProps) => {
             <Input
               label="Title"
               value={book.title}
-              onChange={(e) => setBook({ ...book, title: e.target.value })}
+              onChange={(e) => handleChange("title", e.target.value)}
             />
             <Input
               label="Author"
               value={book.author}
-              onChange={(e) => setBook({ ...book, author: e.target.value })}
+              onChange={(e) => handleChange("author", e.target.value)}
             />
             <Input
               label="Description"
               value={book.description}
+              onChange={(e) => handleChange("description", e.target.value)}
+            />
+
+            <Input
+              label="Total Sales"
+              type="number"
+              value={data?.totalSales.toString()}
               onChange={(e) =>
-                setBook({ ...book, description: e.target.value })
+                handleChange("totalSales", Number(e.target.value))
               }
             />
             <Input
-              label="Published Date"
-              value={book.publishedDate as string}
+              label="Price"
+              type="number"
+              value={data?.price.amount.toString()}
               onChange={(e) =>
-                setBook({ ...book, publishedDate: e.target.value })
+                handleChange("price", {
+                  ...book.price,
+                  amount: Number(e.target.value),
+                })
               }
-              type="date"
-              placeholder="yyyy-mm-dd"
             />
           </ModalBody>
           <ModalFooter>

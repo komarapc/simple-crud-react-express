@@ -142,7 +142,7 @@ const Home = () => {
                 <TableColumn className="uppercase">profit</TableColumn>
                 <TableColumn className="uppercase">action</TableColumn>
               </TableHeader>
-              <TableBody>
+              <TableBody emptyContent={<EmptyTable />}>
                 {filteredBooks.books.map((book) => (
                   <TableRow key={book.id}>
                     <TableCell className="capitalize">{book.title}</TableCell>
@@ -186,6 +186,19 @@ const Home = () => {
             </Table>
           </CardBody>
         </Card>
+      </div>
+    </>
+  );
+};
+
+const EmptyTable = () => {
+  return (
+    <>
+      <div className="flex items-center justify-center h-96">
+        <div className="text-center">
+          <h1 className="text-4xl font-semibold">No data found</h1>
+          <p className="text-lg">There is no data found in this table.</p>
+        </div>
       </div>
     </>
   );

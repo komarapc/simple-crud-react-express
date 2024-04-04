@@ -7,18 +7,25 @@ import {
   Divider,
   getKeyValue,
   Input,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
   Pagination,
   Select,
   SelectItem,
+  Spinner,
   Table,
   TableBody,
   TableCell,
   TableColumn,
   TableHeader,
   TableRow,
+  useDisclosure,
 } from "@nextui-org/react";
 import { useEffect, useMemo, useState } from "react";
-import { Edit2, Trash2 } from "lucide-react";
+import { Edit2, Plus, Trash2 } from "lucide-react";
 type Book = {
   id: string;
   title: string;
@@ -31,6 +38,7 @@ type Book = {
     currency: string;
   };
 };
+type ModalType = "create" | "update" | "delete" | "view" | "none";
 const showPerPage = ["10", "20", "30", "50"];
 const api = "http://localhost:3000";
 const fetchBooks = async () => {
@@ -38,12 +46,15 @@ const fetchBooks = async () => {
   const data = await response.json();
   return data;
 };
+
 const Home = () => {
   const [books, setBooks] = useState<Book[]>([]);
   const [perPage, setPerPage] = useState<any>(new Set(["10"]));
   const [searchTitle, setSearchTitle] = useState<string>("");
   const [page, setPage] = useState<number>(1);
-
+  const [modal, setModal] = useState<ModalType>("none");
+  const { isOpen, onOpenChange } = useDisclosure();
+  const [loading, setLoading] = useState(true);
   const filteredBooks = useMemo(() => {
     const limit =
       Number(Array.from(perPage)[0]) ||
@@ -62,10 +73,18 @@ const Home = () => {
     return { books: booksSliced, totalPage, totalData };
   }, [books, searchTitle, perPage, page]);
 
+  const fetchDataBook = async () => {
+    setLoading(true);
+    const data = await fetchBooks();
+    setBooks(data);
+    setTimeout(() => {
+      setLoading(false);
+    }, 1000);
+  };
+
   useEffect(() => {
     (async () => {
-      const data = await fetchBooks();
-      setBooks(data);
+      await fetchDataBook();
     })();
   }, []);
 
@@ -118,7 +137,18 @@ const Home = () => {
                       className="w-full lg:w-64"
                     />
                   </div>
-                  <div></div>
+                  <div>
+                    <Button
+                      color="primary"
+                      onClick={() => {
+                        setModal("create");
+                        onOpenChange();
+                      }}
+                      startContent={<Plus />}
+                    >
+                      Add Book
+                    </Button>
+                  </div>
                 </div>
               }
               bottomContent={
@@ -144,7 +174,11 @@ const Home = () => {
                 <TableColumn className="uppercase">profit</TableColumn>
                 <TableColumn className="uppercase">action</TableColumn>
               </TableHeader>
-              <TableBody emptyContent={<EmptyTable />}>
+              <TableBody
+                emptyContent={<EmptyTable />}
+                loadingContent={<Spinner />}
+                loadingState={loading ? "loading" : "idle"}
+              >
                 {filteredBooks.books.map((book) => (
                   <TableRow key={book.id}>
                     <TableCell className="capitalize">{book.title}</TableCell>
@@ -189,6 +223,15 @@ const Home = () => {
           </CardBody>
         </Card>
       </div>
+      {modal === "create" || modal === "update" ? (
+        <ModalCreateUpdate
+          type={modal}
+          isOpen={isOpen}
+          onOpenChange={onOpenChange}
+          title={modal === "create" ? "Create new" : "Update"}
+          onSubmit={fetchDataBook}
+        />
+      ) : null}
     </>
   );
 };
@@ -205,4 +248,106 @@ const EmptyTable = () => {
     </>
   );
 };
+
+type ModalProps = {
+  type: ModalType;
+  title: string;
+  isOpen: boolean;
+  data?: Book;
+  onOpenChange?: () => void;
+  onSubmit?: () => void;
+  onCancel?: () => void;
+};
+
+const ModalCreateUpdate = (props: ModalProps) => {
+  const { title, isOpen, data, type, onOpenChange, onSubmit } = props;
+  const [book, setBook] = useState<Book>({} as Book);
+
+  const handleCreate = async () => {
+    const response = await fetch(`${api}/books`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(book),
+    });
+    const data = await response.json();
+    console.log(data);
+    onSubmit && onSubmit();
+  };
+
+  const handleUpdate = async () => {
+    const response = await fetch(`${api}/books/${book.id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(book),
+    });
+    const data = await response.json();
+    console.log(data);
+    onSubmit && onSubmit();
+  };
+
+  useEffect(() => {
+    if (data)
+      setBook({
+        ...data,
+        id: crypto.randomUUID(),
+        totalSales: Math.random() * 1000,
+        price: { amount: Math.random() * 100, currency: "USD" },
+      });
+  }, [data]);
+  return (
+    <>
+      <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
+        <ModalContent>
+          <ModalHeader>{title}</ModalHeader>
+          <ModalBody className="flex flex-col gap-4">
+            <Input
+              label="Title"
+              value={book.title}
+              onChange={(e) => setBook({ ...book, title: e.target.value })}
+            />
+            <Input
+              label="Author"
+              value={book.author}
+              onChange={(e) => setBook({ ...book, author: e.target.value })}
+            />
+            <Input
+              label="Description"
+              value={book.description}
+              onChange={(e) =>
+                setBook({ ...book, description: e.target.value })
+              }
+            />
+            <Input
+              label="Published Date"
+              value={book.publishedDate as string}
+              onChange={(e) =>
+                setBook({ ...book, publishedDate: e.target.value })
+              }
+              type="date"
+              placeholder="yyyy-mm-dd"
+            />
+          </ModalBody>
+          <ModalFooter>
+            <Button
+              color="primary"
+              onClick={() =>
+                type === "create" ? handleCreate() : handleUpdate()
+              }
+            >
+              Submit
+            </Button>
+            <Button color="danger" variant="flat" onClick={onOpenChange}>
+              Cancel
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+    </>
+  );
+};
+
 export default Home;

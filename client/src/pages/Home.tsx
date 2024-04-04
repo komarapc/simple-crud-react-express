@@ -1,4 +1,4 @@
-import { cn } from "@/lib/utils";
+import { cn, numberFormat } from "@/lib/utils";
 import {
   Button,
   Card,
@@ -189,14 +189,12 @@ const Home = () => {
                     <TableCell>
                       {new Date(book.publishedDate).toDateString()}
                     </TableCell>
-                    <TableCell>{book.totalSales}</TableCell>
+                    <TableCell>{numberFormat(book.totalSales)}</TableCell>
                     <TableCell>
-                      {book.price.amount} {book.price.currency}
+                      {numberFormat(book.price.amount)} {book.price.currency}
                     </TableCell>
                     <TableCell>
-                      {new Intl.NumberFormat().format(
-                        book.totalSales * book.price.amount
-                      )}{" "}
+                      {numberFormat(book.totalSales * book.price.amount)}{" "}
                       {book.price.currency}
                     </TableCell>
                     <TableCell>
@@ -310,7 +308,7 @@ const toastError = (message: string) => {
 };
 const ModalCreateUpdate = (props: ModalProps) => {
   const { title, isOpen, data, type, onOpenChange, onSubmit } = props;
-  const [book, setBook] = useState<Book>({} as Book);
+  const [book, setBook] = useState<Book>(data || ({} as Book));
 
   const handleCreate = async () => {
     const response = await fetch(`${api}/books`, {
@@ -351,13 +349,14 @@ const ModalCreateUpdate = (props: ModalProps) => {
     setBook({ ...book, [key]: value });
   };
 
-  useEffect(() => {
-    if (data) setBook(data);
-  }, [data]);
-
   return (
     <>
-      <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
+      <Modal
+        isOpen={isOpen}
+        onOpenChange={onOpenChange}
+        aria-label="modal"
+        aria-labelledby="modal"
+      >
         <ModalContent aria-label="modal" aria-labelledby="modal">
           <ModalHeader>{title}</ModalHeader>
           <ModalBody className="flex flex-col gap-4">

@@ -375,13 +375,16 @@ const Home = () => {
         <ModalCreateUpdate
           type={modal}
           isOpen={isOpen}
-          onOpenChange={onOpenChange}
+          onOpenChange={() => {
+            onOpenChange();
+            setSelectedBook({} as Book);
+          }}
           title={modal === "create" ? "Create new" : "Update"}
           onSubmit={() => {
             fetchDataBook();
             onOpenChange();
           }}
-          data={selectedBook}
+          data={modal === "update" ? selectedBook : ({} as Book)}
         />
       ) : null}
       {modal === "delete" ? (
@@ -496,7 +499,7 @@ const ModalCreateUpdate = (props: ModalProps) => {
   };
 
   useEffect(() => {
-    setBook(data || ({} as Book));
+    if (data) setBook(data || ({} as Book));
   }, [data]);
 
   return (

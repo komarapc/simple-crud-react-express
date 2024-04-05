@@ -46,7 +46,7 @@ const api = "http://localhost:3000";
 const fetchBooks = async () => {
   const response = await fetch(`${api}/books`);
   const data = await response.json();
-  return data;
+  return data || [];
 };
 
 const Home = () => {
@@ -77,12 +77,16 @@ const Home = () => {
   }, [books, searchTitle, perPage, page]);
 
   const fetchDataBook = async () => {
-    setLoading(true);
-    const data = await fetchBooks();
-    setBooks(data);
-    setTimeout(() => {
+    try {
+      setLoading(true);
+      const data = await fetchBooks();
+      setBooks(data);
+      setTimeout(() => {
+        setLoading(false);
+      }, 1000);
+    } catch (error) {
       setLoading(false);
-    }, 1000);
+    }
   };
 
   useEffect(() => {

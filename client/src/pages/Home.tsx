@@ -4,7 +4,12 @@ import {
   Card,
   CardBody,
   CardHeader,
+  Chip,
   Divider,
+  Dropdown,
+  DropdownItem,
+  DropdownMenu,
+  DropdownTrigger,
   getKeyValue,
   Input,
   Modal,
@@ -28,6 +33,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Edit2, Plus, RefreshCcw, Trash2 } from "lucide-react";
 import { toast, Toaster } from "sonner";
 import * as color from "tailwindcss/colors";
+import { HiEllipsisVertical } from "react-icons/hi2";
 type Book = {
   id: string;
   title: string;
@@ -66,6 +72,7 @@ const Home = () => {
   const [selectedBook, setSelectedBook] = useState<Book>({} as Book);
   const [selectedKeys, setSelectedKeys] = useState<any>(new Set([]));
   const [selectedBooks, setSelectedBooks] = useState<Book[]>([]);
+  const [serverOnline, setServerOnline] = useState(true);
   const filteredBooks = useMemo(() => {
     const limit =
       Number(Array.from(perPage)[0]) ||
@@ -97,6 +104,10 @@ const Home = () => {
     }
   };
 
+  setInterval(() => {
+    isOnline();
+  }, 5000);
+
   const countSelectedBooks = useMemo(
     () => selectedBooks.length,
     [selectedBooks]
@@ -122,9 +133,22 @@ const Home = () => {
     onOpenChange();
   };
 
+  const isOnline = async () => {
+    try {
+      // fetch data from a url api
+      const response = await fetch(api);
+      if (response.ok) {
+        setServerOnline(true);
+      }
+    } catch (error) {
+      setServerOnline(false);
+    }
+  };
+
   useEffect(() => {
     (async () => {
       await fetchDataBook();
+      await isOnline();
     })();
   }, []);
 
@@ -190,37 +214,68 @@ const Home = () => {
                     />
                   </div>
                   <div className="flex items-center gap-2">
-                    <Button
-                      isIconOnly
-                      startContent={<RefreshCcw />}
-                      color="primary"
-                      variant="flat"
-                      onClick={() => {
-                        fetchDataBook();
-                      }}
-                    ></Button>
-                    <Button
-                      isDisabled={!countSelectedBooks}
-                      color="danger"
-                      variant="flat"
-                      startContent={<Trash2 />}
-                      onClick={() => {
-                        setModal("delete-all");
-                        onOpenChange();
+                    <Chip
+                      variant="dot"
+                      color={serverOnline ? "success" : "danger"}
+                      size="lg"
+                      classNames={{
+                        dot: "w-3 h-3",
                       }}
                     >
-                      Delete {countSelectedBooks} items
-                    </Button>
-                    <Button
-                      color="primary"
-                      onClick={() => {
-                        setModal("create");
-                        onOpenChange();
-                      }}
-                      startContent={<Plus />}
-                    >
-                      Add Book
-                    </Button>
+                      {serverOnline ? "Server Online" : "Server Offline"}
+                    </Chip>
+                    <Dropdown>
+                      <DropdownTrigger>
+                        <Button
+                          color="primary"
+                          variant="flat"
+                          startContent={<HiEllipsisVertical size={24} />}
+                          isIconOnly
+                        ></Button>
+                      </DropdownTrigger>
+                      <DropdownMenu
+                        aria-label="dropdown"
+                        aria-labelledby="dropdown"
+                        disabledKeys={[
+                          countSelectedBooks === 0 ? "delete-all" : "",
+                        ]}
+                      >
+                        <DropdownItem
+                          color="primary"
+                          onClick={() => {
+                            setModal("create");
+                            onOpenChange();
+                          }}
+                          startContent={<Plus />}
+                        >
+                          Create new
+                        </DropdownItem>
+                        <DropdownItem
+                          startContent={<RefreshCcw />}
+                          key={"refresh"}
+                          color="primary"
+                          variant="flat"
+                          onClick={() => {
+                            fetchDataBook();
+                          }}
+                          showDivider
+                        >
+                          Refresh
+                        </DropdownItem>
+                        <DropdownItem
+                          startContent={<Trash2 />}
+                          key={"delete-all"}
+                          color="danger"
+                          variant="flat"
+                          onClick={() => {
+                            setModal("delete-all");
+                            onOpenChange();
+                          }}
+                        >
+                          Delete {countSelectedBooks} items
+                        </DropdownItem>
+                      </DropdownMenu>
+                    </Dropdown>
                   </div>
                 </div>
               }

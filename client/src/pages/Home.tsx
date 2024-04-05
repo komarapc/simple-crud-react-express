@@ -105,7 +105,7 @@ const Home = () => {
         <Card className={cn("bg-card text-card-foreground")}>
           <CardHeader>
             <div>
-              <h2 className="text-2xl font-semibold">Simple CRUD books </h2>
+              <h2 className="text-lg font-semibold">Simple CRUD books </h2>
               <p className="text-sm">
                 This is a simple CRUD application with ReactJS and Express.
               </p>

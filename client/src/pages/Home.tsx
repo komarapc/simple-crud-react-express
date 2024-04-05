@@ -25,7 +25,7 @@ import {
   useDisclosure,
 } from "@nextui-org/react";
 import { useEffect, useMemo, useState } from "react";
-import { Edit2, Plus, Trash2 } from "lucide-react";
+import { Edit2, Plus, RefreshCcw, Trash2 } from "lucide-react";
 import { toast, Toaster } from "sonner";
 import * as color from "tailwindcss/colors";
 type Book = {
@@ -40,7 +40,13 @@ type Book = {
     currency: string;
   };
 };
-type ModalType = "create" | "update" | "delete" | "view" | "none";
+type ModalType =
+  | "create"
+  | "update"
+  | "delete"
+  | "delete-all"
+  | "view"
+  | "none";
 const showPerPage = ["10", "20", "30", "50"];
 const api = "http://localhost:3000";
 const fetchBooks = async () => {
@@ -58,6 +64,8 @@ const Home = () => {
   const { isOpen, onOpenChange } = useDisclosure();
   const [loading, setLoading] = useState(true);
   const [selectedBook, setSelectedBook] = useState<Book>({} as Book);
+  const [selectedKeys, setSelectedKeys] = useState<any>(new Set([]));
+  const [selectedBooks, setSelectedBooks] = useState<Book[]>([]);
   const filteredBooks = useMemo(() => {
     const limit =
       Number(Array.from(perPage)[0]) ||
@@ -89,6 +97,31 @@ const Home = () => {
     }
   };
 
+  const countSelectedBooks = useMemo(
+    () => selectedBooks.length,
+    [selectedBooks]
+  );
+
+  const handleBulkDelete = async () => {
+    const response = await fetch(`${api}/books/delete`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(selectedBooks),
+    });
+    const data = await response.json();
+    if (!data) {
+      toastError("Failed to delete books");
+      return;
+    }
+    toastSuccess("Books deleted successfully");
+    setSelectedKeys(new Set([]));
+    setSelectedBooks([]);
+    fetchDataBook();
+    onOpenChange();
+  };
+
   useEffect(() => {
     (async () => {
       await fetchDataBook();
@@ -98,6 +131,16 @@ const Home = () => {
   useEffect(() => {
     setPage(1);
   }, [searchTitle]);
+
+  useEffect(() => {
+    if (selectedKeys === "all") {
+      setSelectedBooks(books);
+      return;
+    }
+    const keyEntries = Array.from(selectedKeys);
+    const selected = books.filter((book) => keyEntries.includes(book.id));
+    setSelectedBooks(selected);
+  }, [selectedKeys]);
 
   return (
     <>
@@ -117,6 +160,9 @@ const Home = () => {
               aria-label="books table"
               aria-labelledby="books table"
               removeWrapper
+              selectedKeys={selectedKeys}
+              onSelectionChange={setSelectedKeys}
+              selectionMode="multiple"
               topContent={
                 <div className="flex items-center justify-between w-full">
                   <div className="w-full flex items-center gap-4">
@@ -143,7 +189,28 @@ const Home = () => {
                       className="w-full lg:w-64"
                     />
                   </div>
-                  <div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      isIconOnly
+                      startContent={<RefreshCcw />}
+                      color="primary"
+                      variant="flat"
+                      onClick={() => {
+                        fetchDataBook();
+                      }}
+                    ></Button>
+                    <Button
+                      isDisabled={!countSelectedBooks}
+                      color="danger"
+                      variant="flat"
+                      startContent={<Trash2 />}
+                      onClick={() => {
+                        setModal("delete-all");
+                        onOpenChange();
+                      }}
+                    >
+                      Delete {countSelectedBooks} items
+                    </Button>
                     <Button
                       color="primary"
                       onClick={() => {
@@ -263,6 +330,15 @@ const Home = () => {
           }}
         />
       ) : null}
+      {modal === "delete-all" ? (
+        <ModalDeleteAll
+          type="delete-all"
+          title="Delete all"
+          isOpen={isOpen}
+          onOpenChange={onOpenChange}
+          onSubmit={handleBulkDelete}
+        />
+      ) : null}
     </>
   );
 };
@@ -272,7 +348,7 @@ const EmptyTable = () => {
     <>
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
-          <h1 className="text-4xl font-semibold">No data found</h1>
+          <h1 className="text-4xl font-semibold">Oops!</h1>
           <p className="text-lg">There is no data found in this table.</p>
         </div>
       </div>
@@ -444,6 +520,28 @@ const ModalDelete = (props: ModalProps) => {
           </ModalBody>
           <ModalFooter>
             <Button color="danger" onClick={handleDelete}>
+              Yes
+            </Button>
+            <Button onClick={onOpenChange}>No</Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+    </>
+  );
+};
+
+const ModalDeleteAll = (props: ModalProps) => {
+  const { isOpen, onOpenChange, onSubmit } = props;
+  return (
+    <>
+      <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
+        <ModalContent aria-label="modal" aria-labelledby="modal">
+          <ModalHeader>Delete All</ModalHeader>
+          <ModalBody>
+            <p>Are you sure want to delete all selected books?</p>
+          </ModalBody>
+          <ModalFooter>
+            <Button color="danger" onClick={onSubmit}>
               Yes
             </Button>
             <Button onClick={onOpenChange}>No</Button>

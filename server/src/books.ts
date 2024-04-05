@@ -56,6 +56,22 @@ router.post("/", async (req, res) => {
   }
 });
 
+router.post("/delete", async (req, res) => {
+  try {
+    const book: Book[] = req.body;
+    book.forEach((book) => {
+      const index = data.findIndex((b) => b.id === book.id);
+      if (index !== -1) {
+        data.splice(index, 1);
+      }
+    });
+    res.json({ message: "Book deleted" });
+  } catch (error) {
+    console.log({ error });
+    res.status(400).json({ message: "Invalid request" });
+  }
+});
+
 router.put("/:id", async (req, res) => {
   const { id } = req.params;
   const book: Book = req.body;

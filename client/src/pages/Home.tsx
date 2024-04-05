@@ -114,23 +114,28 @@ const Home = () => {
   );
 
   const handleBulkDelete = async () => {
-    const response = await fetch(`${api}/books/delete`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(selectedBooks),
-    });
-    const data = await response.json();
-    if (!data) {
+    try {
+      const response = await fetch(`${api}/books/delete`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(selectedBooks),
+      });
+      const data = await response.json();
+      if (!data) {
+        toastError("Failed to delete books");
+        return;
+      }
+      toastSuccess("Books deleted successfully");
+      setSelectedKeys(new Set([]));
+      setSelectedBooks([]);
+      fetchDataBook();
+      onOpenChange();
+    } catch (error) {
       toastError("Failed to delete books");
-      return;
+      onOpenChange();
     }
-    toastSuccess("Books deleted successfully");
-    setSelectedKeys(new Set([]));
-    setSelectedBooks([]);
-    fetchDataBook();
-    onOpenChange();
   };
 
   const isOnline = async () => {
@@ -237,7 +242,9 @@ const Home = () => {
                         aria-label="dropdown"
                         aria-labelledby="dropdown"
                         disabledKeys={[
-                          countSelectedBooks === 0 ? "delete-all" : "",
+                          countSelectedBooks === 0 || !serverOnline
+                            ? "delete-all"
+                            : "",
                         ]}
                       >
                         <DropdownItem
@@ -247,6 +254,7 @@ const Home = () => {
                             onOpenChange();
                           }}
                           startContent={<Plus />}
+                          textValue="Create new"
                         >
                           Create new
                         </DropdownItem>
@@ -258,6 +266,7 @@ const Home = () => {
                           onClick={() => {
                             fetchDataBook();
                           }}
+                          textValue="Refresh"
                           showDivider
                         >
                           Refresh
@@ -271,6 +280,7 @@ const Home = () => {
                             setModal("delete-all");
                             onOpenChange();
                           }}
+                          textValue="Delete all"
                         >
                           Delete {countSelectedBooks} items
                         </DropdownItem>
@@ -334,6 +344,7 @@ const Home = () => {
                             setModal("update");
                             onOpenChange();
                           }}
+                          isDisabled={!serverOnline}
                         >
                           <Edit2 />
                         </Button>
@@ -347,6 +358,7 @@ const Home = () => {
                             setModal("delete");
                             onOpenChange();
                           }}
+                          isDisabled={!serverOnline}
                         >
                           <Trash2 />
                         </Button>

@@ -483,6 +483,10 @@ const ModalCreateUpdate = (props: ModalProps) => {
     setBook({ ...book, [key]: value });
   };
 
+  useEffect(() => {
+    setBook(data || ({} as Book));
+  }, [data]);
+
   return (
     <>
       <Modal

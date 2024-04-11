@@ -15,7 +15,7 @@ type Book = {
   };
 };
 
-const data: Book[] = Array.from({ length: 100 }, () => ({
+const data: Book[] = Array.from({ length: 1000 }, () => ({
   id: crypto.randomUUID(),
   title: faker.lorem.words(),
   author: faker.person.fullName(),

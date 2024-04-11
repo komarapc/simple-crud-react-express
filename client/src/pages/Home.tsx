@@ -53,7 +53,7 @@ type ModalType =
   | "delete-all"
   | "view"
   | "none";
-const showPerPage = ["10", "20", "30", "50"];
+const showPerPage = ["10", "20", "30", "50", "100"];
 const api = "http://localhost:3000";
 const fetchBooks = async () => {
   const response = await fetch(`${api}/books`);
@@ -73,6 +73,7 @@ const Home = () => {
   const [selectedKeys, setSelectedKeys] = useState<any>(new Set([]));
   const [selectedBooks, setSelectedBooks] = useState<Book[]>([]);
   const [serverOnline, setServerOnline] = useState(true);
+  const [searchAuthor, setSearchAuthor] = useState("");
   const filteredBooks = useMemo(() => {
     const limit =
       Number(Array.from(perPage)[0]) ||
@@ -82,14 +83,16 @@ const Home = () => {
     const end = start + limit;
     const query = searchTitle.toLowerCase();
 
-    const booksFiltered = books.filter((book) =>
-      book.title.toLowerCase().includes(query)
+    const booksFiltered = books.filter(
+      (book) =>
+        book.title.toLowerCase().includes(query) &&
+        book.author.toLowerCase().includes(searchAuthor.toLowerCase())
     );
     const booksSliced = booksFiltered.slice(start, end);
     const totalData = booksFiltered.length;
     const totalPage = Math.ceil(totalData / limit);
     return { books: booksSliced, totalPage, totalData };
-  }, [books, searchTitle, perPage, page]);
+  }, [books, searchTitle, perPage, page, searchAuthor]);
 
   const fetchDataBook = async () => {
     try {
@@ -106,7 +109,7 @@ const Home = () => {
 
   setInterval(() => {
     isOnline();
-  }, 5000);
+  }, 10000);
 
   const countSelectedBooks = useMemo(
     () => selectedBooks.length,
@@ -124,7 +127,8 @@ const Home = () => {
       });
       const data = await response.json();
       if (!data) {
-        toastError("Failed to delete books");
+        toastError({ message: "Error", description: "Oops something wrong!" });
+
         return;
       }
       toastSuccess("Books deleted successfully");
@@ -133,7 +137,8 @@ const Home = () => {
       fetchDataBook();
       onOpenChange();
     } catch (error) {
-      toastError("Failed to delete books");
+      toastError({ message: "Error", description: "Oops something wrong!" });
+
       onOpenChange();
     }
   };
@@ -172,9 +177,9 @@ const Home = () => {
   }, [selectedKeys]);
 
   return (
-    <>
+    <div className="dark bg-zinc-950 w-full min-h-screen">
       <div className="container mx-auto py-10 font-inter">
-        <Card className={cn("bg-card text-card-foreground")}>
+        <Card className={cn("dark ")}>
           <CardHeader>
             <div>
               <h2 className="text-lg font-semibold">Simple CRUD books </h2>
@@ -204,6 +209,9 @@ const Home = () => {
                       selectedKeys={perPage}
                       onSelectionChange={setPerPage}
                       className="w-full lg:w-32"
+                      classNames={{
+                        popoverContent: cn("dark bg-zinc-900 text-foreground"),
+                      }}
                     >
                       {(item) => (
                         <SelectItem key={item.value} value={item.value}>
@@ -217,6 +225,12 @@ const Home = () => {
                       value={searchTitle}
                       className="w-full lg:w-64"
                     />
+                    <Input
+                      label="Search author"
+                      onChange={(e) => setSearchAuthor(e.target.value)}
+                      value={searchAuthor}
+                      className="w-full lg:w-64"
+                    />
                   </div>
                   <div className="flex items-center gap-2">
                     <Chip
@@ -224,12 +238,24 @@ const Home = () => {
                       color={serverOnline ? "success" : "danger"}
                       size="lg"
                       classNames={{
-                        dot: "w-3 h-3",
+                        dot: "w-3 h-3 animate-pulse",
                       }}
                     >
                       {serverOnline ? "Server Online" : "Server Offline"}
                     </Chip>
-                    <Dropdown>
+                    <Chip
+                      variant="dot"
+                      color={countSelectedBooks ? "primary" : "danger"}
+                      classNames={{
+                        dot: cn(
+                          !countSelectedBooks && "animate-pulse",
+                          "w-3 h-3"
+                        ),
+                      }}
+                    >
+                      {countSelectedBooks} items selected
+                    </Chip>
+                    <Dropdown className="dark text-zinc-50">
                       <DropdownTrigger>
                         <Button
                           color="primary"
@@ -409,7 +435,7 @@ const Home = () => {
           onSubmit={handleBulkDelete}
         />
       ) : null}
-    </>
+    </div>
   );
 };
 
@@ -437,20 +463,27 @@ type ModalProps = {
 };
 const toastSuccess = (message: string) => {
   toast.success(message, {
-    position: "top-center",
+    position: "bottom-center",
     style: {
-      backgroundColor: color.emerald[500],
-      color: color.emerald[50],
+      backgroundColor: color.zinc[900],
+      color: color.emerald[500],
       border: 0,
     },
   });
 };
-const toastError = (message: string) => {
+const toastError = ({
+  message,
+  description,
+}: {
+  message: string;
+  description?: string;
+}) => {
   toast.error(message, {
-    position: "top-center",
+    description,
+    position: "bottom-center",
     style: {
-      backgroundClip: color.red[500],
-      color: color.red[50],
+      backgroundColor: color.zinc[900],
+      color: color.red[500],
       border: 0,
     },
   });
@@ -460,38 +493,51 @@ const ModalCreateUpdate = (props: ModalProps) => {
   const [book, setBook] = useState<Book>(data || ({} as Book));
 
   const handleCreate = async () => {
-    const response = await fetch(`${api}/books`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(book),
-    });
-    const data = await response.json();
-    if (!data) {
-      toastError("Failed to create book");
+    try {
+      const response = await fetch(`${api}/books`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(book),
+      });
+      const data = await response.json();
+      if (!data) {
+        toastError({ message: "Error", description: "Oops something wrong!" });
+        return;
+      }
+      toastSuccess("Book created successfully");
+      onSubmit && onSubmit();
+      setBook({} as Book);
+    } catch (error) {
+      toastError({ message: "Error", description: "Oops something wrong!" });
+
       return;
     }
-    toastSuccess("Book created successfully");
-    onSubmit && onSubmit();
-    setBook({} as Book);
   };
 
   const handleUpdate = async () => {
-    const response = await fetch(`${api}/books/${book.id}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(book),
-    });
-    const data = await response.json();
-    if (!data) {
-      toastError("Failed to update book");
+    try {
+      const response = await fetch(`${api}/books/${book.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(book),
+      });
+      const data = await response.json();
+      if (!data) {
+        toastError({ message: "Error", description: "Oops something wrong!" });
+
+        return;
+      }
+      toastSuccess("Book updated successfully");
+      onSubmit && onSubmit();
+    } catch (error) {
+      toastError({ message: "Error", description: "Oops something wrong!" });
+
       return;
     }
-    toastSuccess("Book updated successfully");
-    onSubmit && onSubmit();
   };
 
   const handleChange = (key: keyof Book, value: any) => {
@@ -510,7 +556,11 @@ const ModalCreateUpdate = (props: ModalProps) => {
         aria-label="modal"
         aria-labelledby="modal"
       >
-        <ModalContent aria-label="modal" aria-labelledby="modal">
+        <ModalContent
+          aria-label="modal"
+          aria-labelledby="modal"
+          className="dark text-foreground"
+        >
           <ModalHeader>{title}</ModalHeader>
           <ModalBody className="flex flex-col gap-4">
             <Input
@@ -587,7 +637,11 @@ const ModalDelete = (props: ModalProps) => {
   return (
     <>
       <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
-        <ModalContent aria-label="modal" aria-labelledby="modal">
+        <ModalContent
+          aria-label="modal"
+          aria-labelledby="modal"
+          className="dark text-foreground"
+        >
           <ModalHeader>{title}</ModalHeader>
           <ModalBody>
             <p>Are you sure want to delete this book?</p>
@@ -609,7 +663,11 @@ const ModalDeleteAll = (props: ModalProps) => {
   return (
     <>
       <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
-        <ModalContent aria-label="modal" aria-labelledby="modal">
+        <ModalContent
+          aria-label="modal"
+          aria-labelledby="modal"
+          className="dark text-foreground"
+        >
           <ModalHeader>Delete All</ModalHeader>
           <ModalBody>
             <p>Are you sure want to delete all selected books?</p>

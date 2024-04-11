@@ -13,7 +13,11 @@ app.use((req, res, next) => {
   next();
 });
 // body parser
-app.use(express.json());
+app.use(
+  express.json({
+    limit: "1000mb",
+  })
+);
 // create a async simple route
 app.get("/", async (req, res) => {
   res.send("Hello World!");

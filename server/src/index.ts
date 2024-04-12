@@ -1,10 +1,10 @@
 import express from "express";
 import dotenv from "dotenv";
 import mainRoutes from "./router";
+import { PORT } from "@/config/app";
 
 const app = express();
 dotenv.config();
-const port = process.env.PORT || 3000;
 
 // enable cors
 app.use((req, res, next) => {
@@ -24,5 +24,5 @@ app.use(
 app.use("/", mainRoutes);
 // start the server
 app.listen(3000, async () => {
-  console.log(`Server started at http://localhost:${port} 🚀`);
+  console.log(`Server started at http://localhost:${PORT} 🚀`);
 });

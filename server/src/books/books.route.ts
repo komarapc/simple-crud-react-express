@@ -1,32 +1,8 @@
 import expres from "express";
 import { faker } from "@faker-js/faker";
+import { Book, data } from "@/src/books/books.mock";
+
 const router = expres.Router();
-
-type Book = {
-  id: string;
-  title: string;
-  author: string;
-  description: string;
-  publishedDate: Date | string;
-  totalSales: number;
-  price: {
-    amount: number;
-    currency: string;
-  };
-};
-
-const data: Book[] = Array.from({ length: 1000 }, () => ({
-  id: crypto.randomUUID(),
-  title: faker.lorem.words(),
-  author: faker.person.fullName(),
-  description: faker.lorem.paragraph(),
-  publishedDate: faker.date.past(),
-  totalSales: Math.floor(Math.random() * 1000),
-  price: {
-    amount: Math.floor(Math.random() * 100),
-    currency: "USD",
-  },
-}));
 
 router.get("/", async (req, res) => {
   res.json(data);

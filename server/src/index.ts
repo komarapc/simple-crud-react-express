@@ -1,7 +1,8 @@
+import "module-alias/register";
 import express from "express";
 import dotenv from "dotenv";
 import mainRoutes from "./router";
-import { PORT } from "@/config/app";
+import { PORT } from "./config/app";
 
 const app = express();
 dotenv.config();

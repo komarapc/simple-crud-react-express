@@ -58,7 +58,8 @@ const api = "http://localhost:3000";
 const fetchBooks = async () => {
   const response = await fetch(`${api}/books`);
   const data = await response.json();
-  return data || [];
+  const { data: books } = data;
+  return books || [];
 };
 
 const Home = () => {
@@ -628,7 +629,10 @@ const ModalDelete = (props: ModalProps) => {
     });
     const res = await response.json();
     if (!res) {
-      toastError("Failed to delete book");
+      toastError({
+        message: "Error",
+        description: "We could not fetch the data",
+      });
       return;
     }
     toastSuccess("Book deleted successfully");
